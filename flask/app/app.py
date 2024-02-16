@@ -23,5 +23,7 @@ CORS(app)
 if not os.path.exists(app.config.get("PYTHON_CODE_DIR")):
     os.makedirs(app.config.get("PYTHON_CODE_DIR"))
 
+
+# Imported at the bottom to prevent a circular import error
 from commands import seed_db
 app.cli.add_command(seed_db)

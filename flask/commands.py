@@ -1,3 +1,6 @@
+from collections import namedtuple
+from typing import Any, Tuple
+
 from sqlalchemy import inspect
 
 from app.app import db, app
@@ -16,7 +19,7 @@ def seed_db() -> None:
     if not _is_empty_db():
         print("Seeding database failed - database already contains data.")
         return
-    _create_motor_brick_data()
+    _create_bricklet_data()
     _create_camera_data()
     _create_program_data()
     _create_chat_data()
@@ -37,23 +40,24 @@ def _is_empty_db() -> bool:
     return True
 
 
-def _create_motor_brick_data() -> None:
+def _create_bricklet_data() -> None:
     data = _get_motor_list()
-    motor_args = {"pulseWidthMin": 700, "pulseWidthMax": 2500, "rotationRangeMin": -4500,
+    motor_settings = {"pulseWidthMin": 700, "pulseWidthMax": 2500, "rotationRangeMin": -4500,
                   "rotationRangeMax": 4500, "velocity": 16000, "acceleration": 10000, "deceleration": 5000,
                   "period": 19500,
                   "turnedOn": True, "visible": True}
 
     for item in data:
-        motor = Motor(name=item["name"], **motor_args)
+        motor = Motor(name=item["name"], **motor_settings)
         if motor.name == "tilt_sideways_motor":
             motor.visible = False
         db.session.add(motor)
         db.session.flush()
 
-        bricklet_id, bricklet_pin = item["bricks"]
-        bricklet = BrickletPin(motorId=motor.id, brickletId=bricklet_id, pin=bricklet_pin)
-        db.session.add(bricklet)
+        bricklet_pins: [Tuple[int, int]] = item["bricklet_pins"]
+        for bricklet_pin in bricklet_pins:
+            bricklet_id, pin = bricklet_pin
+            db.session.add(BrickletPin(motorId=motor.id, brickletId=bricklet_id, pin=pin))
         db.session.flush()
 
     b1 = Bricklet(uid="AAA", brickletNumber=1)
@@ -98,35 +102,38 @@ def _create_chat_data() -> None:
     db.session.flush()
 
 
-def _get_motor_list() -> [dict]:
+def _get_motor_list() -> [dict[str, Any]]:
+    name: str = "name"
+    bricklet_pins: str = "bricklet_pins"
+
     return [
-        {"name": "tilt_forward_motor", "bricks": (1, 0)},
-        {"name": "tilt_sideways_motor", "bricks": (1, 1)},
-        {"name": "turn_head_motor", "bricks": (2, 8)},
-        {"name": "thumb_left_stretch", "bricks": (1, 9)},
-        {"name": "thumb_left_opposition", "bricks": (2, 0)},
-        {"name": "index_left_stretch", "bricks": (2, 1)},
-        {"name": "middle_left_stretch", "bricks": (2, 2)},
-        {"name": "ring_left_stretch", "bricks": (2, 3)},
-        {"name": "pinky_left_stretch", "bricks": (2, 4)},
-        {"name": "thumb_right_stretch", "bricks": (1, 3)},
-        {"name": "thumb_right_opposition", "bricks": (1, 4)},
-        {"name": "index_right_stretch", "bricks": (1, 5)},
-        {"name": "middle_right_stretch", "bricks": (1, 6)},
-        {"name": "ring_right_stretch", "bricks": (1, 7)},
-        {"name": "pinky_right_stretch", "bricks": (1, 8)},
-        {"name": "upper_arm_left_rotation", "bricks": (2, 5)},
-        {"name": "elbow_left", "bricks": (2, 6)},
-        {"name": "lower_arm_left_rotation", "bricks": (2, 7)},
-        {"name": "wrist_left", "bricks": (1, 2)},
-        {"name": "shoulder_vertical_left", "bricks": (3, 7)},
-        {"name": "shoulder_horizontal_left", "bricks": (3, 9)},
-        {"name": "upper_arm_right_rotation", "bricks": (3, 0)},
-        {"name": "elbow_right", "bricks": (3, 1)},
-        {"name": "lower_arm_right_rotation", "bricks": (3, 2)},
-        {"name": "wrist_right", "bricks": (3, 4)},
-        {"name": "shoulder_vertical_right", "bricks": (3, 8)},
-        {"name": "shoulder_horizontal_right", "bricks": (3, 6)},
+        {name: "tilt_forward_motor", bricklet_pins: [(1, 0)]},
+        {name: "tilt_sideways_motor", bricklet_pins: [(1, 1)]},
+        {name: "turn_head_motor", bricklet_pins: [(2, 8)]},
+        {name: "thumb_left_stretch", bricklet_pins: [(1, 9)]},
+        {name: "thumb_left_opposition", bricklet_pins: [(2, 0)]},
+        {name: "index_left_stretch", bricklet_pins: [(2, 1)]},
+        {name: "middle_left_stretch", bricklet_pins: [(2, 2)]},
+        {name: "ring_left_stretch", bricklet_pins: [(2, 3)]},
+        {name: "pinky_left_stretch", bricklet_pins: [(2, 4)]},
+        {name: "thumb_right_stretch", bricklet_pins: [(1, 3)]},
+        {name: "thumb_right_opposition", bricklet_pins: [(1, 4)]},
+        {name: "index_right_stretch", bricklet_pins: [(1, 5)]},
+        {name: "middle_right_stretch", bricklet_pins: [(1, 6)]},
+        {name: "ring_right_stretch", bricklet_pins: [(1, 7)]},
+        {name: "pinky_right_stretch", bricklet_pins: [(1, 8)]},
+        {name: "upper_arm_left_rotation", bricklet_pins: [(2, 5)]},
+        {name: "elbow_left", bricklet_pins: [(2, 6)]},
+        {name: "lower_arm_left_rotation", bricklet_pins: [(2, 7)]},
+        {name: "wrist_left", bricklet_pins: [(1, 2)]},
+        {name: "shoulder_vertical_left", bricklet_pins: [(3, 7), (3, 9)]},
+        {name: "shoulder_horizontal_left", bricklet_pins: [(3, 9)]},
+        {name: "upper_arm_right_rotation", bricklet_pins: [(3, 0)]},
+        {name: "elbow_right", bricklet_pins: [(3, 1)]},
+        {name: "lower_arm_right_rotation", bricklet_pins: [(3, 2)]},
+        {name: "wrist_right", bricklet_pins: [(3, 4)]},
+        {name: "shoulder_vertical_right", bricklet_pins: [(3, 8), (3, 5)]},
+        {name: "shoulder_horizontal_right", bricklet_pins: [(3, 6)]},
     ]
 
 
