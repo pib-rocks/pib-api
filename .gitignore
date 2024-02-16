@@ -1,5 +1,9 @@
 # Visual Studio Code
 .vscode/
+.idea/
+
+flask/.idea
+flask/.vscode
 
 # python
 __pycache__/
@@ -24,3 +28,5 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+flask/pibdata.db
